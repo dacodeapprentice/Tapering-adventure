@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acompanhamento de Redução — Paroxetina</title>
+<style>
+  :root {
+    --bg: #0f1419;
+    --card: #1a2332;
+    --border: #2d3a4f;
+    --text: #e7ecf3;
+    --muted: #8b9bb4;
+    --accent: #3b82f6;
+    --green: #22c55e;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --purple: #a855f7;
+    --grey: #475569;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding: 1.5rem;
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
+  .subtitle { color: var(--muted); font-size: 0.95rem; margin-bottom: 1.5rem; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .card h2 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .cal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  .cal-header button {
+    background: var(--border);
+    border: none;
+    color: var(--text);
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.1rem;
+  }
+  .cal-header button:hover, .cal-header button:focus-visible { background: var(--accent); }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .cal-day-name {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--muted);
+    padding: 0.4rem 0;
+  }
+  .cal-day {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 2px solid transparent;
+    position: relative;
+    background: #151c27;
+    color: var(--text);
+  }
+  .cal-day:hover, .cal-day:focus-visible { border-color: var(--text); outline: none; }
+  .cal-day.other-month { opacity: 0.3; }
+  .cal-day.selected { border-color: var(--text); box-shadow: 0 0 0 2px var(--accent); }
+  .cal-day.today { outline: 2px dashed var(--text); outline-offset: -2px; }
+  .cal-day.status-green { background: var(--green); color: #06230f; }
+  .cal-day.status-amber { background: var(--amber); color: #2b1900; }
+  .cal-day.status-red { background: var(--red); color: #2b0505; }
+  .cal-day.status-purple { background: var(--purple); color: #22062f; }
+  .cal-day.status-grey { background: #1e2937; color: var(--muted); }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  .legend span {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .sq {
+    width: 12px; height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.25rem; }
+  input, textarea, select {
+    width: 100%;
+    background: #151c27;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.55rem 0.75rem;
+    color: var(--text);
+    font-size: 0.95rem;
+    margin-bottom: 0.9rem;
+  }
+  input:focus-visible, textarea:focus-visible, select:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+  input.invalid { border-color: var(--red); }
+  textarea { min-height: 80px; resize: vertical; }
+  button.primary {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.65rem 1.2rem;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+  }
+  button.primary:hover, button.primary:focus-visible { filter: brightness(1.1); }
+  button.secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    width: 100%;
+  }
+  button.secondary:hover, button.secondary:focus-visible { border-color: var(--accent); }
+  button.danger-confirm {
+    background: #2a1a1a;
+    border: 1px solid var(--red);
+    color: #fca5a5;
+  }
+  .btn-row { display: flex; gap: 0.5rem; }
+  .btn-row > * { flex: 1; margin-top: 0.5rem; }
+  .plan-row {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+  .note {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 0.75rem;
+  }
+  .warning {
+    background: #2a1a1a;
+    border: 1px solid #5c2a2a;
+    color: #fca5a5;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    margin-bottom: 1.5rem;
+  }
+  .banner {
+    padding: 0.6rem 0.9rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    margin-bottom: 0.9rem;
+    display: none;
+  }
+  .banner.show { display: block; }
+  .banner.ok { background: #1e2a1a; border: 1px solid #3a5c2a; color: #a3e635; }
+  .banner.err { background: #2a1a1a; border: 1px solid #5c2a2a; color: #fca5a5; }
+  .stats-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  .stat-box {
+    background: #151c27;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem;
+    text-align: center;
+  }
+  .stat-box .num { font-size: 1.5rem; font-weight: 700; }
+  .stat-box .label { font-size: 0.75rem; color: var(--muted); margin-top: 0.15rem; }
+  .chart-wrap { margin-top: 1rem; }
+  .chart-wrap svg { width: 100%; height: 70px; display: block; }
+  .chart-legend { display:flex; gap:1rem; font-size:0.75rem; color:var(--muted); margin-top:0.35rem; }
+  .chart-legend span { display:flex; align-items:center; gap:0.3rem; }
+  .chart-legend .ln { width:14px; height:2px; display:inline-block; }
+  .compare-row {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .compare-box {
+    flex: 1;
+    min-width: 100px;
+    background: #151c27;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.6rem;
+    text-align: center;
+  }
+  .compare-label { font-size: 0.75rem; color: var(--muted); }
+  .compare-value { font-size: 1.25rem; font-weight: 700; margin-top: 0.15rem; }
+  .status-badge {
+    width: 100%;
+    text-align: center;
+    padding: 0.5rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+  .status-badge.st-green { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.4); }
+  .status-badge.st-amber { background: rgba(245,158,11,0.15); color: var(--amber); border: 1px solid rgba(245,158,11,0.4); }
+  .status-badge.st-red { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.4); }
+  .status-badge.st-purple { background: rgba(168,85,247,0.15); color: var(--purple); border: 1px solid rgba(168,85,247,0.4); }
+  .status-badge.st-grey { background: rgba(148,163,184,0.1); color: var(--muted); border: 1px solid var(--border); }
+  .plan-row-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .plan-row-item.active { border-left: 3px solid var(--accent); padding-left: 0.5rem; }
+  .plan-row-item .btn-row { width: auto; flex-wrap: nowrap; }
+  .plan-row-item .btn-row button { width: auto; padding: 0.4rem 0.7rem; font-size: 0.8rem; margin-top: 0; }
+  .badge-active {
+    font-size: 0.7rem;
+    background: var(--accent);
+    color: white;
+    padding: 0.1rem 0.4rem;
+    border-radius: 999px;
+    margin-left: 0.3rem;
+  }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; margin: -1px; overflow: hidden;
+    clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="warning">
+  <strong>Aviso médico:</strong> Esta é apenas uma ferramenta de acompanhamento pessoal. A redução de paroxetina deve ser feita sob supervisão médica. Nunca altere a dose sem orientação do seu médico. Se sentir sintomas intensos, contacte o seu médico ou farmacêutico.
+</div>
+
+<div class="banner" id="globalBanner"></div>
+
+<h1>Acompanhamento de Redução — Paroxetina</h1>
+<p class="subtitle">Guiado por sintomas · Cada plano tem início e fim próprios · Ajuste sempre que necessário</p>
+
+<div class="card">
+  <h2>Visão Geral</h2>
+  <div class="stats-row">
+    <div class="stat-box">
+      <div class="num" id="statAdherence">—</div>
+      <div class="label">Adesão ao plano (30 dias)</div>
+    </div>
+    <div class="stat-box">
+      <div class="num" id="statIntensity">—</div>
+      <div class="label">Intensidade média de sintomas</div>
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="note" style="margin-top:0">Planeado vs. tomado — últimos 60 dias</div>
+    <svg id="doseTrend" viewBox="0 0 300 70" preserveAspectRatio="none" role="img" aria-label="Gráfico comparando a dose planeada com a dose tomada nos últimos 60 dias"></svg>
+    <div class="chart-legend">
+      <span><span class="ln" style="background:var(--purple)"></span> Planeado</span>
+      <span><span class="ln" style="background:var(--accent)"></span> Tomado</span>
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="note" style="margin-top:0">Intensidade de sintomas — últimos 30 dias</div>
+    <svg id="sparkline" viewBox="0 0 300 60" preserveAspectRatio="none" role="img" aria-label="Gráfico da intensidade de sintomas nos últimos 30 dias"></svg>
+  </div>
+
+  <button class="secondary" id="exportCsv" style="margin-top:0.75rem">Exportar registos (CSV)</button>
+</div>
+
+<div class="card">
+  <div class="cal-header">
+    <button id="prevMonth" aria-label="Mês anterior">‹</button>
+    <h2 id="monthLabel"></h2>
+    <button id="nextMonth" aria-label="Mês seguinte">›</button>
+  </div>
+  <div class="cal-grid" id="calGrid" role="grid" aria-label="Calendário de doses"></div>
+  <div class="legend">
+    <span><div class="sq" style="background:var(--green)"></div> Tomado conforme plano</span>
+    <span><div class="sq" style="background:var(--amber)"></div> Tomado (diferente)</span>
+    <span><div class="sq" style="background:var(--red)"></div> Sintomas intensos</span>
+    <span><div class="sq" style="background:var(--purple)"></div> Apenas planeado</span>
+    <span><div class="sq" style="background:#1e2937"></div> Sem registo</span>
+    <span><div class="sq" style="background:transparent; outline:2px dashed var(--text); outline-offset:-2px"></div> Hoje</span>
+  </div>
+</div>
+
+<div class="card" id="dayDetailCard">
+  <h2>Dia Selecionado</h2>
+  <div id="dayInfo">
+    <p class="note" style="margin-top:0">Clique num dia no calendário acima para ver e registar detalhes.</p>
+  </div>
+
+  <div id="dayForm" style="display:none">
+    <div class="note" id="selDateLabel" style="margin-top:0; font-size:0.95rem; color:var(--text); font-weight:600"></div>
+    <div class="compare-row" id="compareRow"></div>
+    <div id="statusBadge"></div>
+
+    <div style="font-weight:600; margin-bottom:0.5rem; margin-top:1rem">Registar o que foi feito</div>
+
+    <label for="selTime">Hora da toma</label>
+    <input type="time" id="selTime">
+
+    <label for="selAmount">Quantidade realmente tomada (mg)</label>
+    <input type="number" id="selAmount" step="0.5" min="0" placeholder="ex: 15">
+    <div class="note" id="amountError" style="display:none; color:var(--red); margin-top:-0.7rem">Introduza um valor igual ou superior a 0.</div>
+
+    <label for="selSymptoms">Sintomas / notas</label>
+    <textarea id="selSymptoms" placeholder="ex: tonturas leves, brain zaps, alteração de humor..."></textarea>
+
+    <label for="selIntensity">Intensidade dos sintomas (0–10)</label>
+    <input type="range" id="selIntensity" min="0" max="10" value="0">
+    <div style="text-align:right; font-size:0.85rem; color:var(--muted); margin-top:-0.7rem" id="intensityVal">0</div>
+
+    <button class="primary" id="saveDay">Guardar Registo</button>
+    <button class="secondary" id="deleteDay">Apagar Registo</button>
+    <button class="secondary danger-confirm" id="confirmDelete" style="display:none">Confirmar — apagar registo</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Planos de Redução</h2>
+  <p class="note" style="margin-top:0; margin-bottom:1rem">Cada plano cobre apenas o seu próprio intervalo de datas (início + duração) — não se aplica indefinidamente. Crie um novo plano sempre que o seu médico ajustar a dose.</p>
+
+  <div id="plansList"></div>
+
+  <button class="secondary" id="newPlanBtn">+ Novo Plano</button>
+
+  <div id="planForm" style="display:none; margin-top:1rem">
+    <div style="font-weight:600; margin-bottom:0.5rem" id="planFormTitle">Novo Plano</div>
+
+    <label for="planStart">Data de início</label>
+    <input type="date" id="planStart">
+
+    <label for="planMonths">Duração (meses)</label>
+    <select id="planMonths">
+      <option value="1">1 mês</option>
+      <option value="2" selected>2 meses</option>
+      <option value="3">3 meses</option>
+      <option value="4">4 meses</option>
+      <option value="6">6 meses</option>
+    </select>
+
+    <div style="margin:1rem 0 0.5rem; font-size:0.9rem; color:var(--muted)">Horário semanal de dose (mg)</div>
+    <div id="weeklyInputs"></div>
+
+    <div class="btn-row">
+      <button class="primary" id="savePlan">Guardar Plano</button>
+      <button class="secondary" id="cancelPlanEdit">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---------- Storage (persistent, private to this user) ----------
+  const STORE_ENTRIES = 'paroxEntries';
+  const STORE_PLANS = 'paroxPlans';
+  const STORE_LEGACY_PLAN = 'paroxPlan';
+  let storageAvailable = true;
+
+  async function storageGet(key) {
+    try {
+      const res = await window.storage.get(key, false);
+      return res ? res.value : null;
+    } catch (e) {
+      return null;
+    }
+  }
+  async function storageSet(key, value) {
+    try {
+      const res = await window.storage.set(key, value, false);
+      if (!res) storageAvailable = false;
+      return !!res;
+    } catch (e) {
+      storageAvailable = false;
+      return false;
+    }
+  }
+  async function storageDelete(key) {
+    try { await window.storage.delete(key, false); } catch (e) {}
+  }
+
+  function showBanner(msg, type) {
+    const el = document.getElementById('globalBanner');
+    el.textContent = msg;
+    el.className = 'banner show ' + type;
+    clearTimeout(showBanner._t);
+    showBanner._t = setTimeout(() => el.classList.remove('show'), 3500);
+  }
+
+  // ---------- Date helpers ----------
+  const DAYS = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+
+  function todayStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function currentTimeStr() {
+    const d = new Date();
+    return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  }
+  function addMonths(dateStr, months) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dt = new Date(y, (m - 1) + months, d);
+    return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+  }
+  function addDays(dateStr, days) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dt = new Date(y, m - 1, d + days);
+    return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+  }
+  function formatDatePt(dateStr) {
+    const d = new Date(dateStr + 'T12:00:00');
+    return d.toLocaleDateString('pt-PT', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+  function lastNDates(n) {
+    const dates = [];
+    const today = new Date();
+    for (let i = n - 1; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      dates.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
+    }
+    return dates;
+  }
+
+  // ---------- Data ----------
+  let current = new Date();
+  current.setDate(1);
+  let selectedDate = null;
+  let editingPlanId = null;
+
+  let entries = {};
+  let plans = []; // { id, start, months, weekly, created }
+
+  async function persistPlans() {
+    return storageSet(STORE_PLANS, JSON.stringify(plans));
+  }
+
+  async function loadData() {
+    try {
+      const savedEntries = await storageGet(STORE_ENTRIES);
+      if (savedEntries) entries = JSON.parse(savedEntries);
+    } catch (e) { console.warn('Erro ao carregar registos:', e); }
+
+    try {
+      const savedPlans = await storageGet(STORE_PLANS);
+      if (savedPlans) {
+        plans = JSON.parse(savedPlans);
+      } else {
+        // migrate legacy single-plan format (applied indefinitely) into a bounded plan
+        const legacy = await storageGet(STORE_LEGACY_PLAN);
+        if (legacy) {
+          const lp = JSON.parse(legacy);
+          if (lp && lp.weekly) {
+            const startDate = lp.created ? lp.created.slice(0, 10) : todayStr();
+            plans = [{
+              id: 'legacy-' + Date.now(),
+              start: startDate,
+              months: lp.months || 2,
+              weekly: lp.weekly,
+              created: lp.created || new Date().toISOString()
+            }];
+            await persistPlans();
+          }
+        }
+      }
+    } catch (e) { console.warn('Erro ao carregar planos:', e); }
+  }
+
+  function planEnd(plan) {
+    return addMonths(plan.start, plan.months);
+  }
+
+  function findActivePlan(dateStr) {
+    const candidates = plans.filter(p => dateStr >= p.start && dateStr < planEnd(p));
+    if (!candidates.length) return null;
+    candidates.sort((a, b) => (a.start < b.start ? 1 : -1)); // most recent start wins on overlap
+    return candidates[0];
+  }
+
+  function getPlannedDose(dateStr) {
+    const p = findActivePlan(dateStr);
+    if (!p) return null;
+    const dayIdx = new Date(dateStr + 'T12:00:00').getDay();
+    const v = p.weekly[dayIdx];
+    return (v === null || v === undefined) ? null : v;
+  }
+
+  function dayStatus(dateStr) {
+    const planned = getPlannedDose(dateStr);
+    const entry = entries[dateStr];
+    if (entry) {
+      if (typeof entry.intensity === 'number' && entry.intensity >= 6) return 'red';
+      if (planned !== null && entry.amount !== null && entry.amount !== undefined && Math.abs(entry.amount - planned) <= 0.1) return 'green';
+      if (entry.amount !== null && entry.amount !== undefined) return 'amber';
+      return planned !== null ? 'purple' : 'grey';
+    }
+    if (planned !== null) return 'purple';
+    return 'grey';
+  }
+
+  // ---------- Calendar ----------
+  function renderCalendar() {
+    const year = current.getFullYear();
+    const month = current.getMonth();
+    document.getElementById('monthLabel').textContent =
+      current.toLocaleString('pt-PT', { month: 'long', year: 'numeric' });
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const prevDays = new Date(year, month, 0).getDate();
+
+    const grid = document.getElementById('calGrid');
+    grid.innerHTML = '';
+
+    DAYS.forEach(d => {
+      const el = document.createElement('div');
+      el.className = 'cal-day-name';
+      el.textContent = d;
+      grid.appendChild(el);
+    });
+
+    for (let i = firstDay - 1; i >= 0; i--) {
+      const el = document.createElement('div');
+      el.className = 'cal-day other-month';
+      el.textContent = prevDays - i;
+      grid.appendChild(el);
+    }
+
+    const statusLabels = {
+      green: 'tomado conforme plano',
+      amber: 'tomado, dose diferente do plano',
+      red: 'sintomas intensos',
+      purple: 'apenas planeado',
+      grey: 'sem registo'
+    };
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const status = dayStatus(dateStr);
+      const el = document.createElement('div');
+      el.className = `cal-day status-${status}`;
+      el.tabIndex = 0;
+      el.setAttribute('role', 'gridcell');
+      if (selectedDate === dateStr) el.classList.add('selected');
+      if (dateStr === todayStr()) el.classList.add('today');
+
+      el.innerHTML = `<span aria-hidden="true">${d}</span><span class="sr-only">, ${statusLabels[status]}</span>`;
+
+      const activate = () => selectDay(dateStr);
+      el.onclick = activate;
+      el.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); } };
+      grid.appendChild(el);
+    }
+  }
+
+  // ---------- Day selection / detail ----------
+  function selectDay(dateStr) {
+    selectedDate = dateStr;
+    document.getElementById('confirmDelete').style.display = 'none';
+    document.getElementById('deleteDay').style.display = 'block';
+    document.getElementById('dayForm').style.display = 'block';
+
+    const entry = entries[dateStr] || {};
+    const isToday = dateStr === todayStr();
+    document.getElementById('selTime').value = entry.time || (isToday ? currentTimeStr() : '09:00');
+    document.getElementById('selAmount').value = entry.amount ?? '';
+    document.getElementById('selAmount').classList.remove('invalid');
+    document.getElementById('amountError').style.display = 'none';
+    document.getElementById('selSymptoms').value = entry.symptoms || '';
+    document.getElementById('selIntensity').value = entry.intensity || 0;
+    document.getElementById('intensityVal').textContent = entry.intensity || 0;
+
+    document.getElementById('selDateLabel').textContent = formatDatePt(dateStr) + (isToday ? ' (hoje)' : '');
+    renderDayCompare(dateStr);
+    renderCalendar();
+  }
+
+  function renderDayCompare(dateStr) {
+    const planned = getPlannedDose(dateStr);
+    const entry = entries[dateStr];
+    const status = dayStatus(dateStr);
+    const statusText = {
+      green: 'Conforme o plano',
+      amber: 'Diferente do plano',
+      red: 'Sintomas intensos',
+      purple: entry ? 'Registado, sem dose planeada' : 'Apenas planeado — ainda não registado',
+      grey: 'Sem registo'
+    }[status];
+
+    document.getElementById('compareRow').innerHTML = `
+      <div class="compare-box">
+        <div class="compare-label">Planeado</div>
+        <div class="compare-value">${planned !== null ? planned + ' mg' : '—'}</div>
+      </div>
+      <div class="compare-box">
+        <div class="compare-label">Tomado</div>
+        <div class="compare-value">${entry && entry.amount !== null && entry.amount !== undefined ? entry.amount + ' mg' : '—'}</div>
+      </div>
+    `;
+    document.getElementById('statusBadge').innerHTML = `<div class="status-badge st-${status}">${statusText}</div>`;
+  }
+
+  document.getElementById('selIntensity').oninput = e => {
+    document.getElementById('intensityVal').textContent = e.target.value;
+  };
+  document.getElementById('selAmount').oninput = e => {
+    e.target.classList.remove('invalid');
+    document.getElementById('amountError').style.display = 'none';
+  };
+
+  document.getElementById('saveDay').onclick = async () => {
+    if (!selectedDate) return;
+    const amountInput = document.getElementById('selAmount');
+    const raw = amountInput.value;
+    let amount = null;
+    if (raw !== '') {
+      amount = parseFloat(raw);
+      if (isNaN(amount) || amount < 0) {
+        amountInput.classList.add('invalid');
+        document.getElementById('amountError').style.display = 'block';
+        return;
+      }
+    }
+    entries[selectedDate] = {
+      time: document.getElementById('selTime').value,
+      amount: amount,
+      symptoms: document.getElementById('selSymptoms').value.trim(),
+      intensity: parseInt(document.getElementById('selIntensity').value)
+    };
+    const ok = await storageSet(STORE_ENTRIES, JSON.stringify(entries));
+    renderCalendar();
+    renderStats();
+    renderDayCompare(selectedDate);
+    showBanner(ok ? 'Registo guardado.' : 'Não foi possível guardar — os dados podem perder-se ao fechar.', ok ? 'ok' : 'err');
+  };
+
+  document.getElementById('deleteDay').onclick = () => {
+    if (!selectedDate || !entries[selectedDate]) return;
+    document.getElementById('deleteDay').style.display = 'none';
+    document.getElementById('confirmDelete').style.display = 'block';
+  };
+  document.getElementById('confirmDelete').onclick = async () => {
+    if (!selectedDate || !entries[selectedDate]) return;
+    delete entries[selectedDate];
+    await storageSet(STORE_ENTRIES, JSON.stringify(entries));
+    selectDay(selectedDate);
+    renderCalendar();
+    renderStats();
+    showBanner('Registo apagado.', 'ok');
+  };
+
+  // ---------- Plans ----------
+  function buildWeeklyInputs(weekly) {
+    const container = document.getElementById('weeklyInputs');
+    container.innerHTML = '';
+    const labels = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+    labels.forEach((label, i) => {
+      const row = document.createElement('div');
+      row.className = 'plan-row';
+      const inputId = `weekly-${i}`;
+      const val = weekly && weekly[i] !== undefined && weekly[i] !== null ? weekly[i] : '';
+      row.innerHTML = `
+        <label style="margin:0" for="${inputId}">${label}</label>
+        <input type="number" step="0.5" min="0" id="${inputId}" data-day="${i}" placeholder="mg" value="${val}">
+      `;
+      container.appendChild(row);
+    });
+  }
+
+  function openNewPlanForm() {
+    editingPlanId = null;
+    document.getElementById('planFormTitle').textContent = 'Novo Plano';
+    const sorted = [...plans].sort((a, b) => (a.start < b.start ? -1 : 1));
+    const lastEnd = sorted.length ? planEnd(sorted[sorted.length - 1]) : null;
+    document.getElementById('planStart').value = lastEnd || todayStr();
+    document.getElementById('planMonths').value = '2';
+    buildWeeklyInputs(null);
+    document.getElementById('planForm').style.display = 'block';
+  }
+
+  function editPlan(id) {
+    const p = plans.find(pl => pl.id === id);
+    if (!p) return;
+    editingPlanId = id;
+    document.getElementById('planFormTitle').textContent = 'Editar Plano';
+    document.getElementById('planStart').value = p.start;
+    document.getElementById('planMonths').value = String(p.months);
+    buildWeeklyInputs(p.weekly);
+    document.getElementById('planForm').style.display = 'block';
+    document.getElementById('planForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function deletePlan(id) {
+    const btn = document.querySelector(`.delete-plan[data-id="${id}"]`);
+    if (!btn) return;
+    if (btn.dataset.confirm === '1') {
+      plans = plans.filter(p => p.id !== id);
+      persistPlans();
+      if (editingPlanId === id) {
+        editingPlanId = null;
+        document.getElementById('planForm').style.display = 'none';
+      }
+      renderPlansList();
+      renderCalendar();
+      renderStats();
+      if (selectedDate) renderDayCompare(selectedDate);
+      showBanner('Plano apagado.', 'ok');
+      return;
+    }
+    btn.dataset.confirm = '1';
+    btn.textContent = 'Confirmar?';
+    setTimeout(() => {
+      const b = document.querySelector(`.delete-plan[data-id="${id}"]`);
+      if (b) { b.dataset.confirm = ''; b.textContent = 'Apagar'; }
+    }, 3000);
+  }
+
+  function renderPlansList() {
+    const el = document.getElementById('plansList');
+    if (!plans.length) {
+      el.innerHTML = '<div class="note" style="margin-top:0">Nenhum plano criado ainda.</div>';
+      return;
+    }
+    const today = todayStr();
+    const sorted = [...plans].sort((a, b) => (a.start < b.start ? -1 : 1));
+    el.innerHTML = sorted.map(p => {
+      const end = planEnd(p);
+      const isActive = today >= p.start && today < end;
+      const doseSummary = p.weekly.filter(v => v !== null && v !== undefined).length
+        ? [...new Set(p.weekly.filter(v => v !== null && v !== undefined))].sort((a,b)=>a-b).map(v => v + 'mg').join(' / ')
+        : 'sem doses definidas';
+      return `<div class="plan-row-item ${isActive ? 'active' : ''}">
+        <div>
+          <div>${formatDatePt(p.start)} → ${formatDatePt(end)}${isActive ? '<span class="badge-active">atual</span>' : ''}</div>
+          <div class="note" style="margin:2px 0 0">${p.months} mês${p.months > 1 ? 'es' : ''} · ${doseSummary}</div>
+        </div>
+        <div class="btn-row">
+          <button class="secondary edit-plan" data-id="${p.id}">Editar</button>
+          <button class="secondary danger-confirm delete-plan" data-id="${p.id}">Apagar</button>
+        </div>
+      </div>`;
+    }).join('');
+    el.querySelectorAll('.edit-plan').forEach(btn => btn.onclick = () => editPlan(btn.dataset.id));
+    el.querySelectorAll('.delete-plan').forEach(btn => btn.onclick = () => deletePlan(btn.dataset.id));
+  }
+
+  document.getElementById('newPlanBtn').onclick = openNewPlanForm;
+  document.getElementById('cancelPlanEdit').onclick = () => {
+    editingPlanId = null;
+    document.getElementById('planForm').style.display = 'none';
+  };
+
+  document.getElementById('savePlan').onclick = async () => {
+    const start = document.getElementById('planStart').value;
+    if (!start) {
+      showBanner('Escolha uma data de início para o plano.', 'err');
+      return;
+    }
+    const months = parseInt(document.getElementById('planMonths').value);
+    const weekly = [];
+    let hasInvalid = false;
+    document.querySelectorAll('#weeklyInputs input').forEach(inp => {
+      inp.classList.remove('invalid');
+      const raw = inp.value;
+      if (raw === '') { weekly[parseInt(inp.dataset.day)] = null; return; }
+      const v = parseFloat(raw);
+      if (isNaN(v) || v < 0) { inp.classList.add('invalid'); hasInvalid = true; return; }
+      weekly[parseInt(inp.dataset.day)] = v;
+    });
+    if (hasInvalid) {
+      showBanner('Verifique as doses assinaladas — devem ser números iguais ou superiores a 0.', 'err');
+      return;
+    }
+
+    if (editingPlanId) {
+      const p = plans.find(pl => pl.id === editingPlanId);
+      if (p) { p.start = start; p.months = months; p.weekly = weekly; }
+    } else {
+      plans.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        start, months, weekly,
+        created: new Date().toISOString()
+      });
+    }
+    const ok = await persistPlans();
+    editingPlanId = null;
+    document.getElementById('planForm').style.display = 'none';
+    renderPlansList();
+    renderCalendar();
+    renderStats();
+    if (selectedDate) renderDayCompare(selectedDate);
+    showBanner(ok ? 'Plano guardado.' : 'Não foi possível guardar o plano.', ok ? 'ok' : 'err');
+  };
+
+  // ---------- Stats & charts ----------
+  function renderStats() {
+    const dates30 = lastNDates(30);
+    let plannedDays = 0, adheredDays = 0, intensitySum = 0, intensityCount = 0;
+    const intensitySeries = [];
+
+    dates30.forEach(dateStr => {
+      const planned = getPlannedDose(dateStr);
+      const entry = entries[dateStr];
+      if (planned !== null) {
+        plannedDays++;
+        if (entry && entry.amount !== null && entry.amount !== undefined && Math.abs(entry.amount - planned) <= 0.1) adheredDays++;
+      }
+      if (entry && typeof entry.intensity === 'number') {
+        intensitySum += entry.intensity;
+        intensityCount++;
+        intensitySeries.push(entry.intensity);
+      } else {
+        intensitySeries.push(null);
+      }
+    });
+
+    document.getElementById('statAdherence').textContent = plannedDays > 0 ? Math.round((adheredDays / plannedDays) * 100) + '%' : '—';
+    document.getElementById('statIntensity').textContent = intensityCount > 0 ? (intensitySum / intensityCount).toFixed(1) : '—';
+
+    drawSparkline(intensitySeries);
+    drawDoseTrend();
+  }
+
+  function drawSparkline(series) {
+    const svg = document.getElementById('sparkline');
+    const w = 300, h = 60, pad = 4;
+    const n = series.length;
+    const pts = series.map((v, i) => ({ v, x: pad + (i / (n - 1)) * (w - pad * 2) })).filter(p => p.v !== null);
+    if (!pts.length) {
+      svg.innerHTML = `<text x="${w/2}" y="${h/2}" fill="#8b9bb4" font-size="11" text-anchor="middle">Sem dados suficientes</text>`;
+      return;
+    }
+    const scaleY = v => h - pad - (v / 10) * (h - pad * 2);
+    const path = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${scaleY(p.v).toFixed(1)}`).join(' ');
+    const dots = pts.map(p => {
+      const color = p.v >= 6 ? '#ef4444' : (p.v >= 3 ? '#f59e0b' : '#22c55e');
+      return `<circle cx="${p.x.toFixed(1)}" cy="${scaleY(p.v).toFixed(1)}" r="2" fill="${color}" />`;
+    }).join('');
+    svg.innerHTML = `<path d="${path}" fill="none" stroke="#3b82f6" stroke-width="1.5" />${dots}`;
+  }
+
+  function drawDoseTrend() {
+    const svg = document.getElementById('doseTrend');
+    const dates = lastNDates(60);
+    const planned = dates.map(d => getPlannedDose(d));
+    const actual = dates.map(d => (entries[d] && entries[d].amount !== null && entries[d].amount !== undefined) ? entries[d].amount : null);
+    const allVals = [...planned, ...actual].filter(v => v !== null && v !== undefined);
+    if (!allVals.length) {
+      svg.innerHTML = `<text x="150" y="35" fill="#8b9bb4" font-size="11" text-anchor="middle">Sem dados suficientes</text>`;
+      return;
+    }
+    const maxV = Math.max(...allVals, 1);
+    const w = 300, h = 70, pad = 6;
+    const scaleX = i => pad + (i / (dates.length - 1)) * (w - pad * 2);
+    const scaleY = v => h - pad - (v / maxV) * (h - pad * 2);
+    function buildPath(series) {
+      let d = '', started = false;
+      series.forEach((v, i) => {
+        if (v === null || v === undefined) { started = false; return; }
+        const x = scaleX(i), y = scaleY(v);
+        d += (started ? ' L ' : ' M ') + x.toFixed(1) + ' ' + y.toFixed(1);
+        started = true;
+      });
+      return d.trim();
+    }
+    svg.innerHTML = `
+      <path d="${buildPath(planned)}" fill="none" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="4 2" />
+      <path d="${buildPath(actual)}" fill="none" stroke="#3b82f6" stroke-width="1.5" />
+    `;
+  }
+
+  // ---------- CSV export ----------
+  document.getElementById('exportCsv').onclick = () => {
+    const rows = [['data','dose_planeada_mg','dose_tomada_mg','hora','intensidade_sintomas','sintomas_notas']];
+    Object.keys(entries).sort().forEach(dateStr => {
+      const e = entries[dateStr];
+      const planned = getPlannedDose(dateStr);
+      rows.push([dateStr, planned ?? '', e.amount ?? '', e.time ?? '', e.intensity ?? '', `"${(e.symptoms || '').replace(/"/g, '""')}"`]);
+    });
+    if (rows.length === 1) { showBanner('Ainda não há registos para exportar.', 'err'); return; }
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `paroxetina-registos-${todayStr()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // ---------- Navigation ----------
+  document.getElementById('prevMonth').onclick = () => { current.setMonth(current.getMonth() - 1); renderCalendar(); };
+  document.getElementById('nextMonth').onclick = () => { current.setMonth(current.getMonth() + 1); renderCalendar(); };
+
+  // ---------- Init ----------
+  (async function init() {
+    await loadData();
+    renderPlansList();
+    renderCalendar();
+    renderStats();
+    if (!storageAvailable) {
+      showBanner('Armazenamento indisponível neste ambiente — os dados podem não persistir entre sessões.', 'err');
+    }
+  })();
+</script>
+</body>
+</html>
