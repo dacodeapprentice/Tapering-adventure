@@ -1,0 +1,1535 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acompanhamento de Redução — Paroxetina</title>
+<style>
+  :root {
+    --bg: #0f1419;
+    --card: #1a2332;
+    --border: #2d3a4f;
+    --text: #e7ecf3;
+    --muted: #8b9bb4;
+    --accent: #3b82f6;
+    --green: #22c55e;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --purple: #a855f7;
+    --grey: #475569;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding: 1.5rem;
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
+  .subtitle { color: var(--muted); font-size: 0.95rem; margin-bottom: 1.5rem; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .card h2 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .cal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  .cal-header button {
+    background: var(--border);
+    border: none;
+    color: var(--text);
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.1rem;
+  }
+  .cal-header button:hover, .cal-header button:focus-visible { background: var(--accent); }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .cal-day-name {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--muted);
+    padding: 0.4rem 0;
+  }
+  .cal-day {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 2px solid transparent;
+    position: relative;
+    background: #151c27;
+    color: var(--text);
+  }
+  .cal-day:hover, .cal-day:focus-visible { border-color: var(--text); outline: none; }
+  .cal-day.other-month { opacity: 0.3; }
+  .cal-day.selected { border-color: var(--text); box-shadow: 0 0 0 2px var(--accent); }
+  .cal-day.today { outline: 2px dashed var(--text); outline-offset: -2px; }
+  .cal-day.status-green { background: var(--green); color: #06230f; }
+  .cal-day.status-amber { background: var(--amber); color: #2b1900; }
+  .cal-day.status-red { background: var(--red); color: #2b0505; }
+  .cal-day.status-purple { background: var(--purple); color: #22062f; }
+  .cal-day.status-grey { background: #1e2937; color: var(--muted); }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  .legend span {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .sq {
+    width: 12px; height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.25rem; }
+  input, textarea, select {
+    width: 100%;
+    background: #151c27;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.55rem 0.75rem;
+    color: var(--text);
+    font-size: 0.95rem;
+    margin-bottom: 0.9rem;
+  }
+  input:focus-visible, textarea:focus-visible, select:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+  input.invalid { border-color: var(--red); }
+  textarea { min-height: 80px; resize: vertical; }
+  button.primary {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.65rem 1.2rem;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+  }
+  button.primary:hover, button.primary:focus-visible { filter: brightness(1.1); }
+  button.secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    width: 100%;
+  }
+  button.secondary:hover, button.secondary:focus-visible { border-color: var(--accent); }
+  button.danger-confirm {
+    background: #2a1a1a;
+    border: 1px solid var(--red);
+    color: #fca5a5;
+  }
+  .btn-row { display: flex; gap: 0.5rem; }
+  .btn-row > * { flex: 1; margin-top: 0.5rem; }
+  .plan-row {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+  .note {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 0.75rem;
+  }
+  .warning {
+    background: #2a1a1a;
+    border: 1px solid #5c2a2a;
+    color: #fca5a5;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    margin-bottom: 1.5rem;
+  }
+  .banner {
+    padding: 0.6rem 0.9rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    margin-bottom: 0.9rem;
+    display: none;
+  }
+  .banner.show { display: block; }
+  .banner.ok { background: #1e2a1a; border: 1px solid #3a5c2a; color: #a3e635; }
+  .banner.err { background: #2a1a1a; border: 1px solid #5c2a2a; color: #fca5a5; }
+  .stats-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  .stat-box {
+    background: #151c27;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem;
+    text-align: center;
+  }
+  .stat-box .num { font-size: 1.5rem; font-weight: 700; }
+  .stat-box .label { font-size: 0.75rem; color: var(--muted); margin-top: 0.15rem; }
+  .chart-wrap { margin-top: 1rem; }
+  .chart-wrap svg { width: 100%; height: 70px; display: block; }
+  .chart-legend { display:flex; gap:1rem; font-size:0.75rem; color:var(--muted); margin-top:0.35rem; }
+  .chart-legend span { display:flex; align-items:center; gap:0.3rem; }
+  .chart-legend .ln { width:14px; height:2px; display:inline-block; }
+  .compare-row {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .compare-box {
+    flex: 1;
+    min-width: 100px;
+    background: #151c27;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.6rem;
+    text-align: center;
+  }
+  .compare-label { font-size: 0.75rem; color: var(--muted); }
+  .compare-value { font-size: 1.25rem; font-weight: 700; margin-top: 0.15rem; }
+  .status-badge {
+    width: 100%;
+    text-align: center;
+    padding: 0.5rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+  .status-badge.st-green { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.4); }
+  .status-badge.st-amber { background: rgba(245,158,11,0.15); color: var(--amber); border: 1px solid rgba(245,158,11,0.4); }
+  .status-badge.st-red { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.4); }
+  .status-badge.st-purple { background: rgba(168,85,247,0.15); color: var(--purple); border: 1px solid rgba(168,85,247,0.4); }
+  .status-badge.st-grey { background: rgba(148,163,184,0.1); color: var(--muted); border: 1px solid var(--border); }
+  .plan-row-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .plan-row-item.active { border-left: 3px solid var(--accent); padding-left: 0.5rem; }
+  .plan-row-item .btn-row { width: auto; flex-wrap: nowrap; }
+  .plan-row-item .btn-row button { width: auto; padding: 0.4rem 0.7rem; font-size: 0.8rem; margin-top: 0; }
+  .badge-active {
+    font-size: 0.7rem;
+    background: var(--accent);
+    color: white;
+    padding: 0.1rem 0.4rem;
+    border-radius: 999px;
+    margin-left: 0.3rem;
+  }
+  .info-tab {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 0.6rem;
+    overflow: hidden;
+    background: #151c27;
+  }
+  #librarySearch {
+    margin-bottom: 0.75rem;
+  }
+  .cat-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.25rem;
+  }
+  .chip {
+    background: #151c27;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 999px;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.78rem;
+    cursor: pointer;
+  }
+  .chip:hover, .chip:focus-visible { border-color: var(--accent); outline: none; }
+  .chip.active { background: var(--accent); color: white; border-color: var(--accent); }
+  .cat-heading {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    margin: 1.25rem 0 0.6rem;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .category-group:first-of-type .cat-heading { margin-top: 0.5rem; }
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    margin-top: 0.3rem;
+  }
+  .compare-table th, .compare-table td {
+    text-align: left;
+    padding: 0.4rem 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .compare-table th { color: var(--muted); font-weight: 600; }
+  .pdf-group-heading {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+    margin: 0.9rem 0 0.4rem;
+  }
+  .pdf-group-heading:first-of-type { margin-top: 0; }
+  .info-tab summary {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.92rem;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .info-tab summary::-webkit-details-marker { display: none; }
+  .info-tab summary::after {
+    content: '+';
+    color: var(--muted);
+    font-size: 1.1rem;
+    margin-left: 0.5rem;
+  }
+  .info-tab[open] summary::after { content: '–'; }
+  .info-tab[open] summary { border-bottom: 1px solid var(--border); }
+  .info-tab summary:hover, .info-tab summary:focus-visible { background: #1a2332; outline: none; }
+  .info-tab-body {
+    padding: 0.85rem 1rem 1rem;
+    font-size: 0.9rem;
+    color: var(--text);
+  }
+  .info-tab-body p { margin-bottom: 0.6rem; }
+  .tab-link {
+    display: inline-block;
+    font-size: 0.8rem;
+    color: var(--accent);
+    text-decoration: none;
+    margin-top: 0.2rem;
+  }
+  .tab-link:hover, .tab-link:focus-visible { text-decoration: underline; }
+  .pdf-list { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+  .pdf-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 0.85rem;
+    background: #151c27;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+  }
+  .pdf-link:hover, .pdf-link:focus-visible { border-color: var(--accent); outline: none; }
+  .pdf-tag {
+    flex-shrink: 0;
+    font-size: 0.7rem;
+    font-weight: 700;
+    background: var(--accent);
+    color: white;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+  }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; margin: -1px; overflow: hidden;
+    clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="banner" id="globalBanner"></div>
+
+<h1>Acompanhamento de Redução — Paroxetina</h1>
+<p class="subtitle">Guiado por sintomas · Cada plano tem início e fim próprios · Ajuste sempre que necessário</p>
+
+<div class="card">
+  <h2>Visão Geral</h2>
+  <div class="stats-row">
+    <div class="stat-box">
+      <div class="num" id="statAdherence">—</div>
+      <div class="label">Adesão ao plano (30 dias)</div>
+    </div>
+    <div class="stat-box">
+      <div class="num" id="statIntensity">—</div>
+      <div class="label">Intensidade média de sintomas</div>
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="note" style="margin-top:0">Planeado vs. tomado — últimos 60 dias</div>
+    <svg id="doseTrend" viewBox="0 0 300 70" preserveAspectRatio="none" role="img" aria-label="Gráfico comparando a dose planeada com a dose tomada nos últimos 60 dias"></svg>
+    <div class="chart-legend">
+      <span><span class="ln" style="background:var(--purple)"></span> Planeado</span>
+      <span><span class="ln" style="background:var(--accent)"></span> Tomado</span>
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="note" style="margin-top:0">Intensidade de sintomas — últimos 30 dias</div>
+    <svg id="sparkline" viewBox="0 0 300 60" preserveAspectRatio="none" role="img" aria-label="Gráfico da intensidade de sintomas nos últimos 30 dias"></svg>
+  </div>
+
+  <button class="secondary" id="exportCsv" style="margin-top:0.75rem">Exportar registos (CSV)</button>
+</div>
+
+<div class="card">
+  <div class="cal-header">
+    <button id="prevMonth" aria-label="Mês anterior">‹</button>
+    <h2 id="monthLabel"></h2>
+    <button id="nextMonth" aria-label="Mês seguinte">›</button>
+  </div>
+  <div class="cal-grid" id="calGrid" role="grid" aria-label="Calendário de doses"></div>
+  <div class="legend">
+    <span><div class="sq" style="background:var(--green)"></div> Tomado conforme plano</span>
+    <span><div class="sq" style="background:var(--amber)"></div> Tomado (diferente)</span>
+    <span><div class="sq" style="background:var(--red)"></div> Sintomas intensos</span>
+    <span><div class="sq" style="background:var(--purple)"></div> Apenas planeado</span>
+    <span><div class="sq" style="background:#1e2937"></div> Sem registo</span>
+    <span><div class="sq" style="background:transparent; outline:2px dashed var(--text); outline-offset:-2px"></div> Hoje</span>
+  </div>
+</div>
+
+<div class="card" id="dayDetailCard">
+  <h2>Dia Selecionado</h2>
+  <div id="dayInfo">
+    <p class="note" style="margin-top:0">Clique num dia no calendário acima para ver e registar detalhes.</p>
+  </div>
+
+  <div id="dayForm" style="display:none">
+    <div class="note" id="selDateLabel" style="margin-top:0; font-size:0.95rem; color:var(--text); font-weight:600"></div>
+    <div class="compare-row" id="compareRow"></div>
+    <div id="statusBadge"></div>
+
+    <div style="font-weight:600; margin-bottom:0.5rem; margin-top:1rem">Registar o que foi feito</div>
+
+    <label for="selTime">Hora da toma</label>
+    <input type="time" id="selTime">
+
+    <label for="selAmount">Quantidade realmente tomada (mg)</label>
+    <input type="number" id="selAmount" step="0.5" min="0" placeholder="ex: 15">
+    <div class="note" id="amountError" style="display:none; color:var(--red); margin-top:-0.7rem">Introduza um valor igual ou superior a 0.</div>
+
+    <label for="selSymptoms">Sintomas / notas</label>
+    <textarea id="selSymptoms" placeholder="ex: tonturas leves, brain zaps, alteração de humor..."></textarea>
+
+    <label for="selIntensity">Intensidade dos sintomas (0–10)</label>
+    <input type="range" id="selIntensity" min="0" max="10" value="0">
+    <div style="text-align:right; font-size:0.85rem; color:var(--muted); margin-top:-0.7rem" id="intensityVal">0</div>
+
+    <button class="primary" id="saveDay">Guardar Registo</button>
+    <button class="secondary" id="deleteDay">Apagar Registo</button>
+    <button class="secondary danger-confirm" id="confirmDelete" style="display:none">Confirmar — apagar registo</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Planos de Redução</h2>
+  <p class="note" style="margin-top:0; margin-bottom:1rem">Cada plano cobre apenas o seu próprio intervalo de datas (início + duração) — não se aplica indefinidamente. Crie um novo plano sempre que o seu médico ajustar a dose.</p>
+
+  <div id="plansList"></div>
+
+  <button class="secondary" id="newPlanBtn">+ Novo Plano</button>
+
+  <div id="planForm" style="display:none; margin-top:1rem">
+    <div style="font-weight:600; margin-bottom:0.5rem" id="planFormTitle">Novo Plano</div>
+
+    <label for="planStart">Data de início</label>
+    <input type="date" id="planStart">
+
+    <label for="planMonths">Duração (meses)</label>
+    <select id="planMonths">
+      <option value="1">1 mês</option>
+      <option value="2" selected>2 meses</option>
+      <option value="3">3 meses</option>
+      <option value="4">4 meses</option>
+      <option value="6">6 meses</option>
+    </select>
+
+    <div style="margin:1rem 0 0.5rem; font-size:0.9rem; color:var(--muted)">Horário semanal de dose (mg)</div>
+    <div id="weeklyInputs"></div>
+
+    <div class="btn-row">
+      <button class="primary" id="savePlan">Guardar Plano</button>
+      <button class="secondary" id="cancelPlanEdit">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Biblioteca de Consulta — Paroxetina</h2>
+  <p class="note" style="margin-top:0; margin-bottom:1rem">Informação geral e educativa, reunida a partir de bulas oficiais, agências reguladoras e literatura científica pública. Não substitui o aconselhamento do seu médico ou farmacêutico, e não é orientação sobre como reduzir a sua dose — isso deve ser sempre decidido com o seu prescritor.</p>
+
+  <input type="text" id="librarySearch" placeholder="Pesquisar na biblioteca (ex: gravidez, meia-vida, interações)...">
+
+  <div class="cat-chips" id="catChips">
+    <button class="chip active" data-cat="all">Tudo</button>
+    <button class="chip" data-cat="fundamentos">Fundamentos</button>
+    <button class="chip" data-cat="farmacologia">Farmacologia</button>
+    <button class="chip" data-cat="clinico">Uso Clínico</button>
+    <button class="chip" data-cat="seguranca">Efeitos e Segurança</button>
+    <button class="chip" data-cat="interacoes">Interações</button>
+    <button class="chip" data-cat="populacoes">Populações Especiais</button>
+    <button class="chip" data-cat="descontinuacao">Dependência e Descontinuação</button>
+    <button class="chip" data-cat="comparacao">Comparação com Outros ISRS</button>
+    <button class="chip" data-cat="historia">História e Regulação</button>
+  </div>
+  <div class="note" id="resultCount" style="margin-top:0.5rem"></div>
+
+  <!-- FUNDAMENTOS -->
+  <div class="category-group" data-category="fundamentos">
+    <h3 class="cat-heading">Fundamentos</h3>
+
+    <details class="info-tab">
+      <summary>O que é a paroxetina?</summary>
+      <div class="info-tab-body">
+        <p>A paroxetina é um antidepressivo da classe dos ISRS (inibidores seletivos da recaptação da serotonina), uma das classes de antidepressivos mais prescritas a nível mundial. Não está quimicamente relacionada com os antidepressivos tricíclicos ou tetracíclicos mais antigos.</p>
+        <p>É utilizada principalmente para depressão e várias perturbações de ansiedade, e é uma das cinco moléculas ISRS mais estudadas, juntamente com a fluoxetina, sertralina, citalopram e fluvoxamina.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+
+    <details class="info-tab">
+      <summary>Composição e formas farmacêuticas</summary>
+      <div class="info-tab-body">
+        <p>A substância ativa é o cloridrato de paroxetina (geralmente sob a forma hemi-hidratada). Está disponível em comprimidos de libertação imediata, comprimidos de libertação controlada/prolongada (ex. Paxil CR) e suspensão oral, em dosagens que tipicamente vão de 10 a 40 mg.</p>
+        <p>Cada comprimido contém ainda excipientes — agentes de enchimento, ligantes, revestimento — que variam consoante o fabricante e o país. A composição exata do seu comprimido específico está sempre listada no folheto informativo da embalagem.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+
+    <details class="info-tab">
+      <summary>Nomes comerciais e apresentações</summary>
+      <div class="info-tab-body">
+        <p>Consoante o país e o fabricante, a paroxetina é comercializada sob várias marcas, incluindo Seroxat (Reino Unido, Irlanda, Portugal), Paxil e Paxil CR (EUA), Aropax (Brasil e outros países), Deroxat (França) e numerosos genéricos rotulados simplesmente "paroxetina" ou "cloridrato de paroxetina".</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+
+    <details class="info-tab">
+      <summary>Breve história e aprovação regulatória</summary>
+      <div class="info-tab-body">
+        <p>A paroxetina foi desenvolvida pela SmithKline Beecham (mais tarde GlaxoSmithKline) e aprovada pela primeira vez no Reino Unido em 1990, seguida da aprovação da FDA nos EUA em 1992 para o tratamento da depressão major em adultos. Ao longo da década seguinte, foi também aprovada para perturbação obsessivo-compulsiva, perturbação de pânico, ansiedade social, ansiedade generalizada e perturbação de stress pós-traumático.</p>
+        <p>Desde então, tornou-se um dos ISRS mais estudados — tanto pelos seus benefícios terapêuticos como por vários episódios de controvérsia regulatória (ver a secção "História e Regulação" abaixo).</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+  </div>
+
+  <!-- FARMACOLOGIA -->
+  <div class="category-group" data-category="farmacologia">
+    <h3 class="cat-heading">Farmacologia e Cinética</h3>
+
+    <details class="info-tab">
+      <summary>Como atua no organismo (mecanismo de ação)</summary>
+      <div class="info-tab-body">
+        <p>A paroxetina bloqueia seletivamente o transportador responsável pela recaptação da serotonina (5-HT) nos neurónios, aumentando a quantidade de serotonina disponível nas sinapses cerebrais. Tem pouca afinidade para outros recetores (muscarínicos, adrenérgicos, dopaminérgicos, histamínicos), o que a distingue de antidepressivos mais antigos com perfis de efeitos secundários mais amplos.</p>
+        <p>O efeito terapêutico completo não é imediato: tipicamente demora entre 2 a 6 semanas a manifestar-se, à medida que o cérebro se adapta aos níveis mais elevados de serotonina — um processo de regulação dos recetores, não apenas do fármaco em si.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+
+    <details class="info-tab">
+      <summary>Absorção, distribuição e ligação às proteínas</summary>
+      <div class="info-tab-body">
+        <p>A paroxetina é completamente absorvida após administração oral. A comida tem um efeito ligeiro sobre a sua absorção (aumento discreto da concentração máxima), sem relevância clínica significativa.</p>
+        <p>Distribui-se amplamente pelo organismo, incluindo o sistema nervoso central, ficando apenas cerca de 1% na circulação sanguínea. Cerca de 93 a 95% do fármaco circula ligado a proteínas plasmáticas — uma ligação elevada que pode influenciar interações com outros medicamentos altamente ligados a proteínas.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+
+    <details class="info-tab">
+      <summary>Metabolismo (CYP2D6) e cinética não linear</summary>
+      <div class="info-tab-body">
+        <p>A paroxetina é extensamente metabolizada no fígado, sobretudo através da enzima CYP2D6, sendo os metabolitos resultantes praticamente inativos. Uma particularidade importante é que a própria paroxetina inibe a enzima que a metaboliza — isto significa que, à medida que a dose ou a duração do tratamento aumentam, esta via satura-se, e a relação entre dose e concentração no sangue deixa de ser proporcional ("cinética não linear").</p>
+        <p>Isto explica por que motivo pequenos ajustes de dose podem ter efeitos desproporcionalmente grandes na concentração sanguínea, e por que a paroxetina tem maior potencial de interações com outros medicamentos metabolizados pela mesma enzima.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+
+    <details class="info-tab">
+      <summary>Excreção e semivida (meia-vida) de eliminação</summary>
+      <div class="info-tab-body">
+        <p>Os metabolitos da paroxetina são eliminados principalmente pela urina (cerca de 64%) e, em menor grau, pelas fezes (cerca de 36%, via biliar). A semivida de eliminação ronda as 21 horas em uso continuado — uma das mais curtas entre os ISRS mais usados.</p>
+        <p>Uma semivida curta significa que a concentração do fármaco no sangue desce mais depressa depois de uma dose ser reduzida ou omitida, o que está associado a sintomas de descontinuação mais frequentes e, nalguns casos, mais rápidos a surgir (ver a secção sobre dependência e descontinuação).</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+  </div>
+
+  <!-- USO CLÍNICO -->
+  <div class="category-group" data-category="clinico">
+    <h3 class="cat-heading">Uso Clínico</h3>
+
+    <details class="info-tab">
+      <summary>Para que indicações está aprovada?</summary>
+      <div class="info-tab-body">
+        <p>Consoante o país, a paroxetina está aprovada para: episódio depressivo major, perturbação obsessivo-compulsiva (TOC), perturbação de pânico (com ou sem agorafobia), ansiedade social/fobia social, perturbação de ansiedade generalizada, perturbação de stress pós-traumático e, nalguns países, perturbação disfórica pré-menstrual e sintomas vasomotores da menopausa.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+
+    <details class="info-tab">
+      <summary>Quando começa a fazer efeito?</summary>
+      <div class="info-tab-body">
+        <p>O alívio dos sintomas costuma ser gradual, e não imediato. A maioria dos ensaios clínicos regista melhorias mensuráveis a partir da segunda a quarta semana, com o efeito máximo a consolidar-se por volta das 6 a 8 semanas. É comum sentir efeitos secundários antes de sentir o benefício terapêutico completo — algo que vale a pena discutir com o médico prescritor.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+
+    <details class="info-tab">
+      <summary>Insuficiência renal e hepática</summary>
+      <div class="info-tab-body">
+        <p>Em pessoas com compromisso renal grave ou compromisso hepático, a concentração de paroxetina no sangue pode aumentar significativamente — em alguns estudos, até cerca de 4 vezes mais do que em pessoas com função renal normal. Por este motivo, estas situações requerem habitualmente doses mais conservadoras e acompanhamento clínico mais próximo, sempre definidos pelo médico.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+  </div>
+
+  <!-- SEGURANÇA -->
+  <div class="category-group" data-category="seguranca">
+    <h3 class="cat-heading">Efeitos Secundários e Segurança</h3>
+
+    <details class="info-tab">
+      <summary>Efeitos secundários comuns</summary>
+      <div class="info-tab-body">
+        <p>Os efeitos secundários mais frequentemente relatados incluem náuseas (sobretudo nas primeiras semanas), sonolência ou, inversamente, insónia, boca seca, sudorese, tonturas, tremores, obstipação ou diarreia, e alterações do apetite ou do peso corporal. A forma como cada pessoa responde varia consideravelmente.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+
+    <details class="info-tab">
+      <summary>Aviso sobre pensamentos suicidas ("boxed warning")</summary>
+      <div class="info-tab-body">
+        <p>Desde 2004, os antidepressivos, incluindo a paroxetina, transportam um aviso destacado (nos EUA, o "boxed warning" — o aviso de segurança mais forte da FDA) sobre o risco aumentado de pensamentos e comportamentos suicidas em crianças, adolescentes e jovens adultos, sobretudo nas primeiras semanas de tratamento ou após alterações de dose.</p>
+        <p>A paroxetina não é aprovada para uso pediátrico em vários países, precisamente devido a este sinal de segurança identificado em ensaios clínicos (ver "História e Regulação" para o contexto completo).</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+
+    <details class="info-tab">
+      <summary>Síndrome serotoninérgica</summary>
+      <div class="info-tab-body">
+        <p>É uma condição rara mas potencialmente grave, causada por excesso de atividade serotoninérgica — geralmente quando a paroxetina é combinada com outros medicamentos que também aumentam a serotonina (triptanos, outros antidepressivos, tramadol, lítio, erva de São João, entre outros).</p>
+        <p>Os sinais incluem agitação, confusão, batimento cardíaco acelerado, sudorese excessiva, tremores, rigidez muscular e, em casos graves, convulsões ou perda de consciência. É considerada uma emergência médica.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+
+    <details class="info-tab">
+      <summary>Hiponatremia (baixa concentração de sódio no sangue)</summary>
+      <div class="info-tab-body">
+        <p>A paroxetina, tal como outros ISRS, pode causar hiponatremia, frequentemente relacionada com um mecanismo chamado SIADH (secreção inapropriada de hormona antidiurética). O risco é maior em pessoas idosas e em quem toma diuréticos ou está desidratado.</p>
+        <p>Sintomas incluem dor de cabeça, dificuldade de concentração, confusão, fraqueza e instabilidade (com risco de quedas); em casos mais graves, pode levar a convulsões ou perda de consciência.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+
+    <details class="info-tab">
+      <summary>Disfunção sexual e disfunção sexual pós-ISRS (PSSD)</summary>
+      <div class="info-tab-body">
+        <p>A disfunção sexual (redução da libido, dificuldade em atingir o orgasmo, disfunção erétil) é um dos efeitos secundários mais comummente relatados com a paroxetina, afetando segundo alguns estudos entre 40 a 65% dos utilizadores de ISRS em geral.</p>
+        <p>Existe ainda um quadro menos frequente, mas documentado na literatura médica desde 2006, chamado disfunção sexual pós-ISRS (PSSD): sintomas sexuais que persistem mesmo depois de o medicamento ser interrompido. É uma área de investigação ativa, sem tratamento estabelecido até à data.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+
+    <details class="info-tab">
+      <summary>Outros riscos: hemorragia, glaucoma e fraturas ósseas</summary>
+      <div class="info-tab-body">
+        <p>A paroxetina pode aumentar ligeiramente o risco de hemorragia, sobretudo quando combinada com aspirina, anti-inflamatórios não esteroides (AINEs) ou anticoagulantes. Pode também causar dilatação pupilar ligeira, o que em pessoas suscetíveis pode desencadear um episódio de glaucoma de ângulo fechado.</p>
+        <p>Estudos epidemiológicos associaram ainda o uso de ISRS, incluindo a paroxetina, a um risco ligeiramente aumentado de fraturas ósseas, embora a relação causal exata não esteja totalmente esclarecida.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+  </div>
+
+  <!-- INTERAÇÕES -->
+  <div class="category-group" data-category="interacoes">
+    <h3 class="cat-heading">Interações Medicamentosas</h3>
+
+    <details class="info-tab">
+      <summary>Inibidores da MAO (IMAO)</summary>
+      <div class="info-tab-body">
+        <p>A combinação de paroxetina com inibidores da monoamina oxidase (IMAO) é contraindicada, devido ao risco elevado de síndrome serotoninérgica. É necessário um intervalo de pelo menos duas semanas entre a interrupção de um IMAO irreversível e o início da paroxetina (ou pelo menos uma semana no sentido inverso), sempre sob orientação médica.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+
+    <details class="info-tab">
+      <summary>Tamoxifeno</summary>
+      <div class="info-tab-body">
+        <p>A paroxetina é um inibidor potente da enzima CYP2D6, necessária para converter o tamoxifeno (usado no tratamento e prevenção do cancro da mama) na sua forma ativa. Alguns estudos sugerem que esta interação pode reduzir a eficácia do tamoxifeno, sobretudo com uso prolongado em conjunto. Por este motivo, é uma combinação que costuma ser discutida com atenção especial entre oncologia e psiquiatria.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+
+    <details class="info-tab">
+      <summary>AINEs, aspirina e anticoagulantes</summary>
+      <div class="info-tab-body">
+        <p>A combinação de paroxetina com anti-inflamatórios não esteroides, aspirina, varfarina ou outros anticoagulantes está associada a um risco aumentado de hemorragia, incluindo hemorragia gastrointestinal. Esta combinação deve ser sempre supervisionada pelo médico.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+
+    <details class="info-tab">
+      <summary>Outros medicamentos serotoninérgicos</summary>
+      <div class="info-tab-body">
+        <p>Combinar a paroxetina com outros medicamentos que também aumentam a serotonina — triptanos (usados na enxaqueca), outros antidepressivos, opióides como o tramadol, lítio, erva de São João ou antipsicóticos — aumenta o risco de síndrome serotoninérgica. A paroxetina também pode alterar os níveis de outros medicamentos metabolizados pela CYP2D6, como certos beta-bloqueadores e antiarrítmicos.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+  </div>
+
+  <!-- POPULAÇÕES ESPECIAIS -->
+  <div class="category-group" data-category="populacoes">
+    <h3 class="cat-heading">Populações Especiais</h3>
+
+    <details class="info-tab">
+      <summary>Gravidez</summary>
+      <div class="info-tab-body">
+        <p>A paroxetina é uma das poucas substâncias da sua classe associadas, em alguns estudos observacionais, a um risco ligeiramente aumentado de malformações cardíacas quando usada no primeiro trimestre — o que levou a FDA a alterar, em 2005, a sua categoria de gravidez de C para D. Outros estudos não replicaram esta associação, e a interpretação dos dados continua a ser discutida na literatura.</p>
+        <p>O uso de ISRS mais tarde na gravidez tem também sido associado a um risco aumentado de hipertensão pulmonar persistente do recém-nascido (HPPRN) e a sintomas de adaptação neonatal transitórios. Qualquer decisão sobre continuar, ajustar ou trocar de medicação durante a gravidez deve ser sempre tomada em conjunto com o médico, pesando estes riscos contra os riscos da depressão ou ansiedade não tratadas.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+
+    <details class="info-tab">
+      <summary>Amamentação</summary>
+      <div class="info-tab-body">
+        <p>A paroxetina é excretada no leite materno, ainda que em quantidades geralmente reduzidas. A decisão de amamentar durante o tratamento deve ser discutida com o médico, considerando os benefícios da amamentação, o estado clínico da mãe e a monitorização do bebé.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+
+    <details class="info-tab">
+      <summary>Pessoas idosas</summary>
+      <div class="info-tab-body">
+        <p>Pessoas idosas apresentam maior risco de hiponatremia, de efeitos anticolinérgicos e de interações medicamentosas — muitas vezes por já tomarem vários outros medicamentos. Por este motivo, é comum iniciar-se com doses mais baixas nesta faixa etária, com ajustes mais graduais, sempre sob supervisão médica.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+
+    <details class="info-tab">
+      <summary>Crianças e adolescentes</summary>
+      <div class="info-tab-body">
+        <p>A paroxetina não é aprovada para uso em crianças e adolescentes na maioria dos países. Isto está diretamente ligado ao aviso de segurança sobre pensamentos suicidas nesta faixa etária e à controvérsia em torno do "Estudo 329" (ver a secção "História e Regulação"), que reavaliou os dados originais e não encontrou benefício claro da paroxetina sobre o placebo em adolescentes com depressão major, identificando também sinais de segurança preocupantes.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+  </div>
+
+  <!-- DEPENDÊNCIA E DESCONTINUAÇÃO -->
+  <div class="category-group" data-category="descontinuacao">
+    <h3 class="cat-heading">Dependência e Síndrome de Descontinuação</h3>
+
+    <details class="info-tab">
+      <summary>Causa dependência? Física vs. psicológica</summary>
+      <div class="info-tab-body">
+        <p>A paroxetina não é considerada "aditiva" no sentido clássico — não provoca procura compulsiva ou euforia. No entanto, o uso continuado leva a uma adaptação física real: os recetores cerebrais ajustam-se à presença constante do fármaco.</p>
+        <p>Esta adaptação (dependência física, distinta de vício) é a razão pela qual parar abruptamente pode desencadear sintomas de descontinuação — mesmo sem existir "vício" no sentido comum da palavra.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+
+    <details class="info-tab">
+      <summary>Como se manifestam os sintomas de descontinuação</summary>
+      <div class="info-tab-body">
+        <p>A literatura clínica costuma agrupar os sintomas de descontinuação de ISRS sob o mnemónico "FINISH": sintomas tipo gripe (Flu-like), insónia, náuseas, desequilíbrio/tonturas (Imbalance), perturbações sensoriais como as sensações de "choque elétrico" ou brain zaps (Sensory), e hiperativação — ansiedade, agitação, irritabilidade (Hyperarousal).</p>
+        <p>Costumam surgir entre 1 a 7 dias após a redução ou paragem, sendo geralmente autolimitados, mas nalguns casos podem prolongar-se por semanas ou meses.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+
+    <details class="info-tab">
+      <summary>Quão frequente e intensa pode ser a abstinência</summary>
+      <div class="info-tab-body">
+        <p>Estudos e registos de farmacovigilância (incluindo o sistema britânico "Yellow Card") sugerem que a paroxetina está associada a uma das taxas mais altas de sintomas de descontinuação entre os ISRS, superiores por exemplo às da fluoxetina. Estima-se que mais de metade das pessoas que param antidepressivos sinta algum grau de sintomas de descontinuação.</p>
+        <p>Na maioria dos casos, os sintomas são ligeiros e passageiros, mas numa minoria podem ser intensos e prolongar-se por semanas ou meses. O risco e a intensidade tendem a ser maiores com paragens abruptas do que com reduções graduais e acompanhadas — e é por isso que as diretrizes clínicas atuais (incluindo as do NICE no Reino Unido, atualizadas em 2022) recomendam explicitamente a redução faseada.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+
+    <details class="info-tab">
+      <summary>Distinguir abstinência de recaída</summary>
+      <div class="info-tab-body">
+        <p>Um dos maiores desafios ao reduzir a paroxetina é diferenciar os sintomas de descontinuação de uma recaída da condição original (depressão ou ansiedade). Como sintomas como ansiedade, irritabilidade e alterações de humor podem ocorrer em ambos os casos, isto por vezes confunde tanto doentes como profissionais de saúde.</p>
+        <p>Alguns sinais que apontam mais para descontinuação do que recaída: início rápido (dias, não semanas) após a redução; presença de sintomas físicos/sensoriais incomuns (brain zaps, tonturas intensas); e melhoria rápida se a dose anterior for retomada. Ainda assim, a avaliação clínica pelo médico é sempre a forma mais fiável de esclarecer a diferença.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+  </div>
+
+  <!-- COMPARAÇÃO -->
+  <div class="category-group" data-category="comparacao">
+    <h3 class="cat-heading">Comparação com Outros ISRS</h3>
+
+    <details class="info-tab">
+      <summary>Semivida comparada com outros ISRS</summary>
+      <div class="info-tab-body">
+        <table class="compare-table">
+          <thead><tr><th>ISRS</th><th>Semivida aproximada</th></tr></thead>
+          <tbody>
+            <tr><td>Paroxetina</td><td>~21–24 horas</td></tr>
+            <tr><td>Sertralina</td><td>~26 horas</td></tr>
+            <tr><td>Escitalopram</td><td>~27–32 horas</td></tr>
+            <tr><td>Citalopram</td><td>~33–36 horas</td></tr>
+            <tr><td>Fluoxetina</td><td>~4–6 dias (metabolito ativo: 7–15 dias)</td></tr>
+          </tbody>
+        </table>
+        <p class="note" style="margin-top:0.6rem">Valores aproximados, reunidos a partir de literatura farmacológica publicada; podem variar entre indivíduos. A fluoxetina, com a semivida mais longa, é geralmente considerada a que apresenta menor risco de sintomas de descontinuação; a paroxetina, com uma das mais curtas, tende a estar associada a maior risco.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+
+    <details class="info-tab">
+      <summary>Porque é a paroxetina frequentemente descrita como "mais difícil" de deixar</summary>
+      <div class="info-tab-body">
+        <p>Três características da paroxetina combinam-se para explicar esta reputação na literatura clínica: (1) a sua semivida curta, que faz a concentração no sangue cair rapidamente após reduzir ou parar a dose; (2) a cinética não linear, que faz com que pequenas reduções de dose possam corresponder a quedas desproporcionalmente grandes na ocupação dos recetores cerebrais, sobretudo em doses mais baixas; e (3) um ligeiro efeito anticolinérgico, ausente na maioria dos outros ISRS.</p>
+        <p>Por estas razões, alguns guias clínicos de desprescrição recomendam reduções mais graduais e cuidadosas para a paroxetina do que para ISRS de semivida mais longa.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+  </div>
+
+  <!-- HISTÓRIA -->
+  <div class="category-group" data-category="historia">
+    <h3 class="cat-heading">História e Regulação</h3>
+
+    <details class="info-tab">
+      <summary>Aprovação inicial (1990–1992)</summary>
+      <div class="info-tab-body">
+        <p>A paroxetina foi aprovada pela primeira vez no Reino Unido em 1990 e pela FDA nos EUA em 1992, para o tratamento da depressão major em adultos. Nos anos seguintes, foram aprovadas indicações adicionais para várias perturbações de ansiedade.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+
+    <details class="info-tab">
+      <summary>O "Estudo 329" e a controvérsia sobre uso em adolescentes</summary>
+      <div class="info-tab-body">
+        <p>O Estudo 329, financiado pela SmithKline Beecham (mais tarde GlaxoSmithKline) e publicado em 2001, concluiu que a paroxetina era segura e eficaz para depressão major em adolescentes. Este resultado foi amplamente citado durante mais de uma década.</p>
+        <p>Em 2015, uma reanálise independente dos dados originais do ensaio (publicada na revista BMJ, no âmbito da iniciativa "Restoring Invisible and Abandoned Trials") concluiu que nem a paroxetina nem a imipramina (o comparador do estudo) tinham demonstrado eficácia superior ao placebo, e identificou sinais de segurança relevantes que não tinham sido devidamente destacados na publicação original. O caso tornou-se uma referência central nos debates sobre transparência de dados de ensaios clínicos financiados pela indústria farmacêutica, e resultou num acordo de 3 mil milhões de dólares entre a GSK e o Departamento de Justiça dos EUA em 2012, relativo a alegações de promoção indevida do medicamento.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+
+    <details class="info-tab">
+      <summary>Aviso de segurança pediátrica (2003–2004)</summary>
+      <div class="info-tab-body">
+        <p>Em 2003, a agência reguladora britânica (MHRA) recomendou que a paroxetina não fosse usada em menores de 18 anos, na sequência de dados de ensaios clínicos que sugeriam um risco aumentado de pensamentos e comportamentos autolesivos nesta faixa etária. Em 2004, a FDA seguiu com um aviso semelhante para todos os antidepressivos, culminando no "boxed warning" que ainda hoje consta das bulas.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+
+    <details class="info-tab">
+      <summary>Alteração da categoria de gravidez (2005)</summary>
+      <div class="info-tab-body">
+        <p>Em 2005, na sequência de dois estudos observacionais que sugeriam um risco ligeiramente aumentado de malformações cardíacas com uso no primeiro trimestre, a FDA solicitou — e a GlaxoSmithKline aceitou — alterar a classificação de gravidez da paroxetina da categoria C para a categoria D, sinalizando evidência de risco fetal com base em dados humanos. Esta continua a ser uma das razões pelas quais a paroxetina é frequentemente evitada em preferência a outros ISRS durante a gravidez, embora estudos posteriores tenham produzido resultados mistos.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+
+    <details class="info-tab">
+      <summary>Reconhecimento crescente da síndrome de descontinuação (2019–presente)</summary>
+      <div class="info-tab-body">
+        <p>Durante muitos anos, as diretrizes clínicas no Reino Unido descreviam os sintomas de descontinuação de antidepressivos como "geralmente ligeiros e autolimitados, com duração de cerca de uma semana". Após campanhas de doentes e a publicação de revisões sistemáticas que questionaram esta caracterização, o NICE (Reino Unido) atualizou formalmente as suas diretrizes em 2019 e novamente em 2022, reconhecendo que os sintomas "podem ser graves e prolongados nalguns doentes", e recomendando explicitamente a redução faseada da dose ao parar antidepressivos.</p>
+        <a href="#pdfLibrary" class="tab-link">Ver documentos oficiais ↓</a>
+      </div>
+    </details>
+  </div>
+
+  <div class="pdf-list" id="pdfLibrary">
+    <div class="note" style="margin-top:0; margin-bottom:0.75rem; font-weight:600; color:var(--text); font-size:0.95rem">Documentos oficiais para consulta</div>
+
+    <div class="pdf-group-heading">Bulas e resumos oficiais das características do medicamento</div>
+    <a class="pdf-link" href="https://www.accessdata.fda.gov/drugsatfda_docs/label/2024/020031s083%2C020710s051lbl.pdf" target="_blank" rel="noopener">
+      <span>FDA (EUA) — Bula oficial completa do Paxil (paroxetina)</span><span class="pdf-tag">PDF</span>
+    </a>
+    <a class="pdf-link" href="https://br.gsk.com/media/8265/aropax.pdf" target="_blank" rel="noopener">
+      <span>GSK Brasil — Bula profissional oficial do Aropax (cloridrato de paroxetina), em português</span><span class="pdf-tag">PDF</span>
+    </a>
+    <a class="pdf-link" href="https://assets.hpra.ie/products/Human/24647/Licence_PA1077-097-002_18122025133151.pdf" target="_blank" rel="noopener">
+      <span>HPRA (Irlanda/UE) — Resumo das Características do Medicamento — Seroxat 20mg</span><span class="pdf-tag">PDF</span>
+    </a>
+    <a class="pdf-link" href="https://cima.aemps.es/cima/pdfs/ft/65259/FT_65259.pdf" target="_blank" rel="noopener">
+      <span>AEMPS (Espanha) — Ficha técnica da paroxetina, em espanhol</span><span class="pdf-tag">PDF</span>
+    </a>
+    <a class="pdf-link" href="https://www.ema.europa.eu/documents/referral/opinion-following-article-31-referral-paroxetine-international-non-proprietary-name-inn-paroxetine_en.pdf" target="_blank" rel="noopener">
+      <span>EMA — Parecer do Comité de Medicamentos sobre a revisão de segurança da paroxetina (2005)</span><span class="pdf-tag">PDF</span>
+    </a>
+
+    <div class="pdf-group-heading">Guias para doentes</div>
+    <a class="pdf-link" href="https://medsafe.govt.nz/consumers/educational-material/Stopping-Antidepressant-medicines.pdf" target="_blank" rel="noopener">
+      <span>Medsafe (Nova Zelândia) — "Tips for stopping antidepressant medicines" (guia para o doente)</span><span class="pdf-tag">PDF</span>
+    </a>
+    <a class="pdf-link" href="https://www.sieccan.org/_files/ugd/1332d5_430249a34e274a8f88f416e37bd32c39.pdf" target="_blank" rel="noopener">
+      <span>SIECCAN — Disfunção Sexual Pós-ISRS (PSSD): informação-chave para doentes</span><span class="pdf-tag">PDF</span>
+    </a>
+    <a class="pdf-link" href="https://www.nice.org.uk/guidance/ng222/resources/discussing-firstline-treatments-for-less-severe-depression-pdf-11131007006" target="_blank" rel="noopener">
+      <span>NICE (Reino Unido) — Resumo visual sobre tratamentos de primeira linha para depressão (NG222)</span><span class="pdf-tag">PDF</span>
+    </a>
+
+    <div class="pdf-group-heading">Guias clínicos e de desprescrição</div>
+    <a class="pdf-link" href="https://www.psa.org.au/wp-content/uploads/2025/01/Antidepressants_deprescribing_clinical_guide.pdf" target="_blank" rel="noopener">
+      <span>Pharmaceutical Society of Australia — Guia clínico de desprescrição de antidepressivos</span><span class="pdf-tag">PDF</span>
+    </a>
+    <a class="pdf-link" href="https://bjgp.org/content/bjgp/74/739/e113.full.pdf" target="_blank" rel="noopener">
+      <span>British Journal of General Practice — Recursos para apoiar a descontinuação segura de antidepressivos</span><span class="pdf-tag">PDF</span>
+    </a>
+
+    <div class="pdf-group-heading">História e literatura científica</div>
+    <a class="pdf-link" href="https://induccion.urosario.edu.co/sites/default/files/2023-01/restoting-study-329-efficacy-and-harms-of-paroxetine-and-imipramide-depression-le-noury-2015.pdf" target="_blank" rel="noopener">
+      <span>BMJ (Le Noury et al., 2015) — Reanálise do "Estudo 329" sobre paroxetina em adolescentes</span><span class="pdf-tag">PDF</span>
+    </a>
+
+    <p class="note">Documentos de entidades reguladoras, sociedades científicas e revistas académicas, maioritariamente em inglês, espanhol e português. Alguns são dirigidos a profissionais de saúde — se tiver dúvidas sobre o conteúdo, fale com o seu médico ou farmacêutico.</p>
+  </div>
+</div>
+<div class="warning">
+  <strong>Aviso médico:</strong> Esta é apenas uma ferramenta de acompanhamento pessoal. A redução de paroxetina deve ser feita sob supervisão médica. Nunca altere a dose sem orientação do seu médico. Se sentir sintomas intensos, contacte o seu médico ou farmacêutico.
+</div>
+
+<script>
+  // ---------- Storage (persistent, private to this user) ----------
+  const STORE_ENTRIES = 'paroxEntries';
+  const STORE_PLANS = 'paroxPlans';
+  const STORE_LEGACY_PLAN = 'paroxPlan';
+  let storageAvailable = true;
+
+  async function storageGet(key) {
+    try {
+      const res = await window.storage.get(key, false);
+      return res ? res.value : null;
+    } catch (e) {
+      return null;
+    }
+  }
+  async function storageSet(key, value) {
+    try {
+      const res = await window.storage.set(key, value, false);
+      if (!res) storageAvailable = false;
+      return !!res;
+    } catch (e) {
+      storageAvailable = false;
+      return false;
+    }
+  }
+  async function storageDelete(key) {
+    try { await window.storage.delete(key, false); } catch (e) {}
+  }
+
+  function showBanner(msg, type) {
+    const el = document.getElementById('globalBanner');
+    el.textContent = msg;
+    el.className = 'banner show ' + type;
+    clearTimeout(showBanner._t);
+    showBanner._t = setTimeout(() => el.classList.remove('show'), 3500);
+  }
+
+  // ---------- Date helpers ----------
+  const DAYS = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+
+  function todayStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function currentTimeStr() {
+    const d = new Date();
+    return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  }
+  function addMonths(dateStr, months) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dt = new Date(y, (m - 1) + months, d);
+    return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+  }
+  function addDays(dateStr, days) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dt = new Date(y, m - 1, d + days);
+    return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+  }
+  function formatDatePt(dateStr) {
+    const d = new Date(dateStr + 'T12:00:00');
+    return d.toLocaleDateString('pt-PT', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+  function lastNDates(n) {
+    const dates = [];
+    const today = new Date();
+    for (let i = n - 1; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      dates.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
+    }
+    return dates;
+  }
+
+  // ---------- Data ----------
+  let current = new Date();
+  current.setDate(1);
+  let selectedDate = null;
+  let editingPlanId = null;
+
+  let entries = {};
+  let plans = []; // { id, start, months, weekly, created }
+
+  async function persistPlans() {
+    return storageSet(STORE_PLANS, JSON.stringify(plans));
+  }
+
+  async function loadData() {
+    try {
+      const savedEntries = await storageGet(STORE_ENTRIES);
+      if (savedEntries) entries = JSON.parse(savedEntries);
+    } catch (e) { console.warn('Erro ao carregar registos:', e); }
+
+    try {
+      const savedPlans = await storageGet(STORE_PLANS);
+      if (savedPlans) {
+        plans = JSON.parse(savedPlans);
+      } else {
+        // migrate legacy single-plan format (applied indefinitely) into a bounded plan
+        const legacy = await storageGet(STORE_LEGACY_PLAN);
+        if (legacy) {
+          const lp = JSON.parse(legacy);
+          if (lp && lp.weekly) {
+            const startDate = lp.created ? lp.created.slice(0, 10) : todayStr();
+            plans = [{
+              id: 'legacy-' + Date.now(),
+              start: startDate,
+              months: lp.months || 2,
+              weekly: lp.weekly,
+              created: lp.created || new Date().toISOString()
+            }];
+            await persistPlans();
+          }
+        }
+      }
+    } catch (e) { console.warn('Erro ao carregar planos:', e); }
+  }
+
+  function planEnd(plan) {
+    return addMonths(plan.start, plan.months);
+  }
+
+  function findActivePlan(dateStr) {
+    const candidates = plans.filter(p => dateStr >= p.start && dateStr < planEnd(p));
+    if (!candidates.length) return null;
+    candidates.sort((a, b) => (a.start < b.start ? 1 : -1)); // most recent start wins on overlap
+    return candidates[0];
+  }
+
+  function getPlannedDose(dateStr) {
+    const p = findActivePlan(dateStr);
+    if (!p) return null;
+    const dayIdx = new Date(dateStr + 'T12:00:00').getDay();
+    const v = p.weekly[dayIdx];
+    return (v === null || v === undefined) ? null : v;
+  }
+
+  function dayStatus(dateStr) {
+    const planned = getPlannedDose(dateStr);
+    const entry = entries[dateStr];
+    if (entry) {
+      if (typeof entry.intensity === 'number' && entry.intensity >= 6) return 'red';
+      if (planned !== null && entry.amount !== null && entry.amount !== undefined && Math.abs(entry.amount - planned) <= 0.1) return 'green';
+      if (entry.amount !== null && entry.amount !== undefined) return 'amber';
+      return planned !== null ? 'purple' : 'grey';
+    }
+    if (planned !== null) return 'purple';
+    return 'grey';
+  }
+
+  // ---------- Calendar ----------
+  function renderCalendar() {
+    const year = current.getFullYear();
+    const month = current.getMonth();
+    document.getElementById('monthLabel').textContent =
+      current.toLocaleString('pt-PT', { month: 'long', year: 'numeric' });
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const prevDays = new Date(year, month, 0).getDate();
+
+    const grid = document.getElementById('calGrid');
+    grid.innerHTML = '';
+
+    DAYS.forEach(d => {
+      const el = document.createElement('div');
+      el.className = 'cal-day-name';
+      el.textContent = d;
+      grid.appendChild(el);
+    });
+
+    for (let i = firstDay - 1; i >= 0; i--) {
+      const el = document.createElement('div');
+      el.className = 'cal-day other-month';
+      el.textContent = prevDays - i;
+      grid.appendChild(el);
+    }
+
+    const statusLabels = {
+      green: 'tomado conforme plano',
+      amber: 'tomado, dose diferente do plano',
+      red: 'sintomas intensos',
+      purple: 'apenas planeado',
+      grey: 'sem registo'
+    };
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const status = dayStatus(dateStr);
+      const el = document.createElement('div');
+      el.className = `cal-day status-${status}`;
+      el.tabIndex = 0;
+      el.setAttribute('role', 'gridcell');
+      if (selectedDate === dateStr) el.classList.add('selected');
+      if (dateStr === todayStr()) el.classList.add('today');
+
+      el.innerHTML = `<span aria-hidden="true">${d}</span><span class="sr-only">, ${statusLabels[status]}</span>`;
+
+      const activate = () => selectDay(dateStr);
+      el.onclick = activate;
+      el.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); } };
+      grid.appendChild(el);
+    }
+  }
+
+  // ---------- Day selection / detail ----------
+  function selectDay(dateStr) {
+    selectedDate = dateStr;
+    document.getElementById('confirmDelete').style.display = 'none';
+    document.getElementById('deleteDay').style.display = 'block';
+    document.getElementById('dayForm').style.display = 'block';
+
+    const entry = entries[dateStr] || {};
+    const isToday = dateStr === todayStr();
+    document.getElementById('selTime').value = entry.time || (isToday ? currentTimeStr() : '09:00');
+    document.getElementById('selAmount').value = entry.amount ?? '';
+    document.getElementById('selAmount').classList.remove('invalid');
+    document.getElementById('amountError').style.display = 'none';
+    document.getElementById('selSymptoms').value = entry.symptoms || '';
+    document.getElementById('selIntensity').value = entry.intensity || 0;
+    document.getElementById('intensityVal').textContent = entry.intensity || 0;
+
+    document.getElementById('selDateLabel').textContent = formatDatePt(dateStr) + (isToday ? ' (hoje)' : '');
+    renderDayCompare(dateStr);
+    renderCalendar();
+  }
+
+  function renderDayCompare(dateStr) {
+    const planned = getPlannedDose(dateStr);
+    const entry = entries[dateStr];
+    const status = dayStatus(dateStr);
+    const statusText = {
+      green: 'Conforme o plano',
+      amber: 'Diferente do plano',
+      red: 'Sintomas intensos',
+      purple: entry ? 'Registado, sem dose planeada' : 'Apenas planeado — ainda não registado',
+      grey: 'Sem registo'
+    }[status];
+
+    document.getElementById('compareRow').innerHTML = `
+      <div class="compare-box">
+        <div class="compare-label">Planeado</div>
+        <div class="compare-value">${planned !== null ? planned + ' mg' : '—'}</div>
+      </div>
+      <div class="compare-box">
+        <div class="compare-label">Tomado</div>
+        <div class="compare-value">${entry && entry.amount !== null && entry.amount !== undefined ? entry.amount + ' mg' : '—'}</div>
+      </div>
+    `;
+    document.getElementById('statusBadge').innerHTML = `<div class="status-badge st-${status}">${statusText}</div>`;
+  }
+
+  document.getElementById('selIntensity').oninput = e => {
+    document.getElementById('intensityVal').textContent = e.target.value;
+  };
+  document.getElementById('selAmount').oninput = e => {
+    e.target.classList.remove('invalid');
+    document.getElementById('amountError').style.display = 'none';
+  };
+
+  document.getElementById('saveDay').onclick = async () => {
+    if (!selectedDate) return;
+    const amountInput = document.getElementById('selAmount');
+    const raw = amountInput.value;
+    let amount = null;
+    if (raw !== '') {
+      amount = parseFloat(raw);
+      if (isNaN(amount) || amount < 0) {
+        amountInput.classList.add('invalid');
+        document.getElementById('amountError').style.display = 'block';
+        return;
+      }
+    }
+    entries[selectedDate] = {
+      time: document.getElementById('selTime').value,
+      amount: amount,
+      symptoms: document.getElementById('selSymptoms').value.trim(),
+      intensity: parseInt(document.getElementById('selIntensity').value)
+    };
+    const ok = await storageSet(STORE_ENTRIES, JSON.stringify(entries));
+    renderCalendar();
+    renderStats();
+    renderDayCompare(selectedDate);
+    showBanner(ok ? 'Registo guardado.' : 'Não foi possível guardar — os dados podem perder-se ao fechar.', ok ? 'ok' : 'err');
+  };
+
+  document.getElementById('deleteDay').onclick = () => {
+    if (!selectedDate || !entries[selectedDate]) return;
+    document.getElementById('deleteDay').style.display = 'none';
+    document.getElementById('confirmDelete').style.display = 'block';
+  };
+  document.getElementById('confirmDelete').onclick = async () => {
+    if (!selectedDate || !entries[selectedDate]) return;
+    delete entries[selectedDate];
+    await storageSet(STORE_ENTRIES, JSON.stringify(entries));
+    selectDay(selectedDate);
+    renderCalendar();
+    renderStats();
+    showBanner('Registo apagado.', 'ok');
+  };
+
+  // ---------- Plans ----------
+  function buildWeeklyInputs(weekly) {
+    const container = document.getElementById('weeklyInputs');
+    container.innerHTML = '';
+    const labels = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+    labels.forEach((label, i) => {
+      const row = document.createElement('div');
+      row.className = 'plan-row';
+      const inputId = `weekly-${i}`;
+      const val = weekly && weekly[i] !== undefined && weekly[i] !== null ? weekly[i] : '';
+      row.innerHTML = `
+        <label style="margin:0" for="${inputId}">${label}</label>
+        <input type="number" step="0.5" min="0" id="${inputId}" data-day="${i}" placeholder="mg" value="${val}">
+      `;
+      container.appendChild(row);
+    });
+  }
+
+  function openNewPlanForm() {
+    editingPlanId = null;
+    document.getElementById('planFormTitle').textContent = 'Novo Plano';
+    const sorted = [...plans].sort((a, b) => (a.start < b.start ? -1 : 1));
+    const lastEnd = sorted.length ? planEnd(sorted[sorted.length - 1]) : null;
+    document.getElementById('planStart').value = lastEnd || todayStr();
+    document.getElementById('planMonths').value = '2';
+    buildWeeklyInputs(null);
+    document.getElementById('planForm').style.display = 'block';
+  }
+
+  function editPlan(id) {
+    const p = plans.find(pl => pl.id === id);
+    if (!p) return;
+    editingPlanId = id;
+    document.getElementById('planFormTitle').textContent = 'Editar Plano';
+    document.getElementById('planStart').value = p.start;
+    document.getElementById('planMonths').value = String(p.months);
+    buildWeeklyInputs(p.weekly);
+    document.getElementById('planForm').style.display = 'block';
+    document.getElementById('planForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function deletePlan(id) {
+    const btn = document.querySelector(`.delete-plan[data-id="${id}"]`);
+    if (!btn) return;
+    if (btn.dataset.confirm === '1') {
+      plans = plans.filter(p => p.id !== id);
+      persistPlans();
+      if (editingPlanId === id) {
+        editingPlanId = null;
+        document.getElementById('planForm').style.display = 'none';
+      }
+      renderPlansList();
+      renderCalendar();
+      renderStats();
+      if (selectedDate) renderDayCompare(selectedDate);
+      showBanner('Plano apagado.', 'ok');
+      return;
+    }
+    btn.dataset.confirm = '1';
+    btn.textContent = 'Confirmar?';
+    setTimeout(() => {
+      const b = document.querySelector(`.delete-plan[data-id="${id}"]`);
+      if (b) { b.dataset.confirm = ''; b.textContent = 'Apagar'; }
+    }, 3000);
+  }
+
+  function renderPlansList() {
+    const el = document.getElementById('plansList');
+    if (!plans.length) {
+      el.innerHTML = '<div class="note" style="margin-top:0">Nenhum plano criado ainda.</div>';
+      return;
+    }
+    const today = todayStr();
+    const sorted = [...plans].sort((a, b) => (a.start < b.start ? -1 : 1));
+    el.innerHTML = sorted.map(p => {
+      const end = planEnd(p);
+      const isActive = today >= p.start && today < end;
+      const doseSummary = p.weekly.filter(v => v !== null && v !== undefined).length
+        ? [...new Set(p.weekly.filter(v => v !== null && v !== undefined))].sort((a,b)=>a-b).map(v => v + 'mg').join(' / ')
+        : 'sem doses definidas';
+      return `<div class="plan-row-item ${isActive ? 'active' : ''}">
+        <div>
+          <div>${formatDatePt(p.start)} → ${formatDatePt(end)}${isActive ? '<span class="badge-active">atual</span>' : ''}</div>
+          <div class="note" style="margin:2px 0 0">${p.months} mês${p.months > 1 ? 'es' : ''} · ${doseSummary}</div>
+        </div>
+        <div class="btn-row">
+          <button class="secondary edit-plan" data-id="${p.id}">Editar</button>
+          <button class="secondary danger-confirm delete-plan" data-id="${p.id}">Apagar</button>
+        </div>
+      </div>`;
+    }).join('');
+    el.querySelectorAll('.edit-plan').forEach(btn => btn.onclick = () => editPlan(btn.dataset.id));
+    el.querySelectorAll('.delete-plan').forEach(btn => btn.onclick = () => deletePlan(btn.dataset.id));
+  }
+
+  document.getElementById('newPlanBtn').onclick = openNewPlanForm;
+  document.getElementById('cancelPlanEdit').onclick = () => {
+    editingPlanId = null;
+    document.getElementById('planForm').style.display = 'none';
+  };
+
+  document.getElementById('savePlan').onclick = async () => {
+    const start = document.getElementById('planStart').value;
+    if (!start) {
+      showBanner('Escolha uma data de início para o plano.', 'err');
+      return;
+    }
+    const months = parseInt(document.getElementById('planMonths').value);
+    const weekly = [];
+    let hasInvalid = false;
+    document.querySelectorAll('#weeklyInputs input').forEach(inp => {
+      inp.classList.remove('invalid');
+      const raw = inp.value;
+      if (raw === '') { weekly[parseInt(inp.dataset.day)] = null; return; }
+      const v = parseFloat(raw);
+      if (isNaN(v) || v < 0) { inp.classList.add('invalid'); hasInvalid = true; return; }
+      weekly[parseInt(inp.dataset.day)] = v;
+    });
+    if (hasInvalid) {
+      showBanner('Verifique as doses assinaladas — devem ser números iguais ou superiores a 0.', 'err');
+      return;
+    }
+
+    if (editingPlanId) {
+      const p = plans.find(pl => pl.id === editingPlanId);
+      if (p) { p.start = start; p.months = months; p.weekly = weekly; }
+    } else {
+      plans.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        start, months, weekly,
+        created: new Date().toISOString()
+      });
+    }
+    const ok = await persistPlans();
+    editingPlanId = null;
+    document.getElementById('planForm').style.display = 'none';
+    renderPlansList();
+    renderCalendar();
+    renderStats();
+    if (selectedDate) renderDayCompare(selectedDate);
+    showBanner(ok ? 'Plano guardado.' : 'Não foi possível guardar o plano.', ok ? 'ok' : 'err');
+  };
+
+  // ---------- Stats & charts ----------
+  function renderStats() {
+    const dates30 = lastNDates(30);
+    let plannedDays = 0, adheredDays = 0, intensitySum = 0, intensityCount = 0;
+    const intensitySeries = [];
+
+    dates30.forEach(dateStr => {
+      const planned = getPlannedDose(dateStr);
+      const entry = entries[dateStr];
+      if (planned !== null) {
+        plannedDays++;
+        if (entry && entry.amount !== null && entry.amount !== undefined && Math.abs(entry.amount - planned) <= 0.1) adheredDays++;
+      }
+      if (entry && typeof entry.intensity === 'number') {
+        intensitySum += entry.intensity;
+        intensityCount++;
+        intensitySeries.push(entry.intensity);
+      } else {
+        intensitySeries.push(null);
+      }
+    });
+
+    document.getElementById('statAdherence').textContent = plannedDays > 0 ? Math.round((adheredDays / plannedDays) * 100) + '%' : '—';
+    document.getElementById('statIntensity').textContent = intensityCount > 0 ? (intensitySum / intensityCount).toFixed(1) : '—';
+
+    drawSparkline(intensitySeries);
+    drawDoseTrend();
+  }
+
+  function drawSparkline(series) {
+    const svg = document.getElementById('sparkline');
+    const w = 300, h = 60, pad = 4;
+    const n = series.length;
+    const pts = series.map((v, i) => ({ v, x: pad + (i / (n - 1)) * (w - pad * 2) })).filter(p => p.v !== null);
+    if (!pts.length) {
+      svg.innerHTML = `<text x="${w/2}" y="${h/2}" fill="#8b9bb4" font-size="11" text-anchor="middle">Sem dados suficientes</text>`;
+      return;
+    }
+    const scaleY = v => h - pad - (v / 10) * (h - pad * 2);
+    const path = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${scaleY(p.v).toFixed(1)}`).join(' ');
+    const dots = pts.map(p => {
+      const color = p.v >= 6 ? '#ef4444' : (p.v >= 3 ? '#f59e0b' : '#22c55e');
+      return `<circle cx="${p.x.toFixed(1)}" cy="${scaleY(p.v).toFixed(1)}" r="2" fill="${color}" />`;
+    }).join('');
+    svg.innerHTML = `<path d="${path}" fill="none" stroke="#3b82f6" stroke-width="1.5" />${dots}`;
+  }
+
+  function drawDoseTrend() {
+    const svg = document.getElementById('doseTrend');
+    const dates = lastNDates(60);
+    const planned = dates.map(d => getPlannedDose(d));
+    const actual = dates.map(d => (entries[d] && entries[d].amount !== null && entries[d].amount !== undefined) ? entries[d].amount : null);
+    const allVals = [...planned, ...actual].filter(v => v !== null && v !== undefined);
+    if (!allVals.length) {
+      svg.innerHTML = `<text x="150" y="35" fill="#8b9bb4" font-size="11" text-anchor="middle">Sem dados suficientes</text>`;
+      return;
+    }
+    const maxV = Math.max(...allVals, 1);
+    const w = 300, h = 70, pad = 6;
+    const scaleX = i => pad + (i / (dates.length - 1)) * (w - pad * 2);
+    const scaleY = v => h - pad - (v / maxV) * (h - pad * 2);
+    function buildPath(series) {
+      let d = '', started = false;
+      series.forEach((v, i) => {
+        if (v === null || v === undefined) { started = false; return; }
+        const x = scaleX(i), y = scaleY(v);
+        d += (started ? ' L ' : ' M ') + x.toFixed(1) + ' ' + y.toFixed(1);
+        started = true;
+      });
+      return d.trim();
+    }
+    svg.innerHTML = `
+      <path d="${buildPath(planned)}" fill="none" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="4 2" />
+      <path d="${buildPath(actual)}" fill="none" stroke="#3b82f6" stroke-width="1.5" />
+    `;
+  }
+
+  // ---------- CSV export ----------
+  document.getElementById('exportCsv').onclick = () => {
+    const rows = [['data','dose_planeada_mg','dose_tomada_mg','hora','intensidade_sintomas','sintomas_notas']];
+    Object.keys(entries).sort().forEach(dateStr => {
+      const e = entries[dateStr];
+      const planned = getPlannedDose(dateStr);
+      rows.push([dateStr, planned ?? '', e.amount ?? '', e.time ?? '', e.intensity ?? '', `"${(e.symptoms || '').replace(/"/g, '""')}"`]);
+    });
+    if (rows.length === 1) { showBanner('Ainda não há registos para exportar.', 'err'); return; }
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `paroxetina-registos-${todayStr()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // ---------- Navigation ----------
+  document.getElementById('prevMonth').onclick = () => { current.setMonth(current.getMonth() - 1); renderCalendar(); };
+  document.getElementById('nextMonth').onclick = () => { current.setMonth(current.getMonth() + 1); renderCalendar(); };
+
+  // ---------- Library search & category filter ----------
+  let activeLibraryCat = 'all';
+
+  function applyLibraryFilters() {
+    const term = (document.getElementById('librarySearch').value || '').trim().toLowerCase();
+    let totalVisible = 0;
+    document.querySelectorAll('.category-group').forEach(group => {
+      const cat = group.dataset.category;
+      const groupMatchesCat = (activeLibraryCat === 'all' || activeLibraryCat === cat);
+      let anyVisibleInGroup = false;
+      group.querySelectorAll('details.info-tab').forEach(tab => {
+        const text = tab.textContent.toLowerCase();
+        const matchesSearch = term === '' ? true : text.includes(term);
+        const visible = term === '' ? groupMatchesCat : matchesSearch;
+        tab.style.display = visible ? '' : 'none';
+        if (visible) { anyVisibleInGroup = true; totalVisible++; }
+      });
+      group.style.display = anyVisibleInGroup ? '' : 'none';
+    });
+    const countEl = document.getElementById('resultCount');
+    if (term !== '') {
+      countEl.textContent = totalVisible + (totalVisible === 1 ? ' tópico encontrado' : ' tópicos encontrados');
+    } else {
+      countEl.textContent = '';
+    }
+  }
+
+  document.getElementById('librarySearch').oninput = applyLibraryFilters;
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.onclick = () => {
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeLibraryCat = chip.dataset.cat;
+      document.getElementById('librarySearch').value = '';
+      applyLibraryFilters();
+    };
+  });
+  applyLibraryFilters();
+
+  // ---------- Init ----------
+  (async function init() {
+    await loadData();
+    renderPlansList();
+    renderCalendar();
+    renderStats();
+    if (!storageAvailable) {
+      showBanner('Armazenamento indisponível neste ambiente — os dados podem não persistir entre sessões.', 'err');
+    }
+  })();
+</script>
+</body>
+</html>
